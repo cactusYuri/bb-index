@@ -149,9 +149,9 @@ table{border-collapse:collapse;width:100%}
 .rk b{color:var(--ink);font-weight:600}
 .delta{font-family:var(--mono);font-size:11px;margin-left:4px}
 .delta.up{color:var(--up)}.delta.down{color:var(--down)}
-.model{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:10px;max-width:320px;font-weight:600;min-width:0}
-.model:hover .model-name{text-decoration:underline;text-underline-offset:3px}
-.model:focus-visible{outline:2px solid var(--accent);border-radius:6px}
+button.model{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:10px;max-width:320px;font-weight:600;min-width:0}
+button.model:hover .model-name{text-decoration:underline;text-underline-offset:3px}
+button.model:focus-visible{outline:2px solid var(--accent);border-radius:6px}
 .model-text{display:flex;flex-direction:column;min-width:0;line-height:1.25}
 .model-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .model-sub{font-size:11px;font-weight:400;color:var(--faint);margin-top:1px}
@@ -335,7 +335,7 @@ dialog::backdrop{background:rgba(17,17,16,.32)}
 .personal .status{margin-bottom:18px}
 .personal .layout{display:grid;grid-template-columns:minmax(330px,410px) minmax(0,1fr);gap:20px;align-items:start}
 .personal .stack{display:grid;gap:16px;min-width:0}
-.personal .card{padding:0;overflow:hidden}
+.personal .card{padding:0;overflow:visible}
 .personal .card-head{padding:18px 20px 12px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .personal .card-head h2{margin:0;font-family:var(--serif);font-weight:500;font-size:21px}
 .personal .card-head p{margin:4px 0 0;font-size:12px;color:var(--muted)}
@@ -379,7 +379,7 @@ dialog::backdrop{background:rgba(17,17,16,.32)}
 .personal .table-wrap table{font-size:13px}
 .personal .table-wrap th{position:sticky;top:0;z-index:1;background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);text-align:left;padding:9px 12px;border-bottom:1px solid var(--ink);white-space:nowrap}
 .personal .table-wrap td{padding:8px 12px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
-.personal .table-wrap td.model{white-space:normal;min-width:170px;font-weight:600}
+.personal .table-wrap td.model{white-space:normal;min-width:230px;font-weight:600}
 .personal .table-wrap td.model .subtle{font-weight:400;font-size:11px}
 .personal .up{color:var(--up)}.personal .down{color:var(--down)}
 .personal .empty{padding:18px;text-align:center;color:var(--muted);font-size:12px}
@@ -397,6 +397,52 @@ dialog::backdrop{background:rgba(17,17,16,.32)}
 .personal .secondary-panel>summary::-webkit-details-marker{display:none}
 .personal .secondary-panel>.card{border-top:0;border-radius:0 0 var(--r) var(--r)}
 .personal .file{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+/* ruler comparison card */
+.personal .pref{padding:14px;background:var(--surface);border-radius:14px}
+.personal .pref+.pref{margin-top:12px}
+.personal .pref .field{margin-top:14px}
+.personal .pref .field-label{font-size:12px;font-weight:600;color:var(--ink-2)}
+.pref-pair{display:grid;grid-template-columns:minmax(0,1fr) 34px;grid-template-rows:auto auto;column-gap:8px;row-gap:8px}
+.pref-pair>.mpick:first-child{grid-area:1/1}
+.pref-pair>.mpick:last-child{grid-area:2/1}
+.pref-pair>.pref-swap{grid-area:1/2/3/3;align-self:center;margin-top:18px}
+.pref-pair .field{margin-top:0!important}
+.pref-swap{width:34px;height:60px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);font-size:14px}
+.pref-swap:hover{border-color:var(--ink);color:var(--ink)}
+.mpick{position:relative;min-width:0}
+.mpick-btn{display:flex;align-items:center;gap:7px;width:100%;height:38px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);text-align:left;font-size:13px;color:var(--ink);min-width:0}
+.mpick-btn:hover,.mpick-btn[aria-expanded=true]{border-color:var(--ink)}
+.mpick-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.mpick-rank{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.mpick-placeholder{flex:1;color:var(--faint)}
+.mpick-caret{color:var(--faint);font-size:11px}
+.mpick-pop{position:absolute;z-index:15;top:calc(100% + 4px);left:0;width:100%;min-width:240px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(17,17,16,.14);padding:6px}
+.mpick-pop input{width:100%;height:34px;border:1px solid var(--line);border-radius:7px;padding:0 10px;font-size:13px;margin-bottom:4px;outline:0}
+.mpick-pop input:focus{border-color:var(--ink)}
+.mpick-list{max-height:260px;overflow-y:auto}
+.mpick-opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;font-size:13px;cursor:pointer}
+.mpick-opt .mpick-name{font-weight:500}
+.mpick-opt.active{background:var(--sunk)}
+.mpick-opt[aria-selected=true] .mpick-name{font-weight:700}
+.mpick-opt[aria-selected=true]::after{content:"✓";color:var(--accent);font-size:12px}
+.mpick-empty,.mpick-more{font-size:12px;color:var(--faint);padding:6px 8px;margin:0}
+.mpick-more:empty{display:none}
+.pref-seg{display:grid;grid-template-columns:1fr auto 1fr;gap:4px;padding:3px;background:var(--sunk);border:1px solid var(--line);border-radius:10px}
+.pref-opt{border:0;background:transparent;border-radius:7px;padding:7px 8px;font-size:12px;color:var(--ink-2);min-width:0}
+.pref-opt span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pref-opt:hover{color:var(--ink)}
+.pref-opt[aria-pressed=true]{background:var(--ink);color:#fff;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.pref-range-head{display:flex;justify-content:space-between;align-items:baseline}
+.pref-range-value{font-size:12px;font-family:var(--mono);color:var(--ink)}
+.personal .pref input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;margin:10px 0 4px;padding:0;border:0;background:linear-gradient(90deg,var(--ink) var(--v,100%),var(--line) var(--v,100%))}
+.personal .pref input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--surface);border:2px solid var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:pointer}
+.personal .pref input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--surface);border:2px solid var(--ink);cursor:pointer}
+.pref-range-marks{display:flex;justify-content:space-between;font-size:10px;color:var(--faint)}
+.pref-gap-row{display:flex;align-items:center;gap:8px}
+.personal .pref .pref-gap-row input{width:76px;flex:none;height:34px}
+.pref-gap-unit{font-size:11px;color:var(--muted);line-height:1.4}
+.pref-hint{margin:6px 0 0;font-size:11px;color:var(--muted);background:var(--sunk);border-radius:7px;padding:6px 9px}
 
 /* footer */
 .site-footer{border-top:1px solid var(--line);background:var(--surface)}
@@ -490,7 +536,7 @@ dialog::backdrop{background:rgba(17,17,16,.32)}
  .rank-table{min-width:0}
  .rank-table .opt{display:none}
  .rank-table td,.rank-table th{padding-left:6px;padding-right:6px}
- .model{max-width:170px}
+ button.model{max-width:170px}
  .score i{width:40px}
  .drawer{max-width:100vw}
  .search{max-width:none;flex-basis:100%}
@@ -791,6 +837,7 @@ window.startBBExplorer = function (S, data) {
     else { a.textContent = (names[i].match(/[A-Za-z0-9一-鿿]/) || ['?'])[0].toUpperCase(); a.style.background = vendorColor(vendors[i]); }
     return a;
   }
+  window.bbAvatar = (i, cls) => avatar(i, cls);
   function modelButton(i, extra, sub) {
     const b = btn('', () => profile(i), 'model'), text = el('span', null, 'model-text');
     text.append(el('span', names[i], 'model-name'));
@@ -1609,23 +1656,94 @@ function start(D){
   if(m.type==='explanation'){busy=false;active=null;setBusy();$('progress-track').hidden=true;$('run-progress').textContent='';if(m.domain!==domain)return;lastExplain=m;renderExplanation();}
  }
  function modelOrder(k){return (k==='overall'?overallBaseline:D.domains[k].rows).map(r=>Number(r.index)).filter(i=>models[i]).sort((a,b)=>(baseMaps[k].get(a).rank||Infinity)-(baseMaps[k].get(b).rank||Infinity)||modelName(a).localeCompare(modelName(b),'zh-CN'));}
- function picker(k,selected,onSelect,label){const wrap=node('div',null,'field'),lab=node('label',label),input=node('input'),sel=node('select');input.type='search';input.placeholder='搜索名称、别名或 ID';input.setAttribute('aria-label',label+'搜索');sel.size=5;sel.setAttribute('aria-label',label+'，按基线名次排序');lab.append(input);wrap.append(lab,sel);
-  const fill=()=>{const q=input.value.trim().toLocaleLowerCase(),order=modelOrder(k).filter(i=>[modelName(i),models[i].name,models[i].id,...(Array.isArray(models[i].aliases)?models[i].aliases:[])].join(' ').toLocaleLowerCase().includes(q));clear(sel);if(!order.length){const o=node('option','无匹配模型');o.disabled=true;sel.append(o);}for(const i of order){const r=baseMaps[k].get(i),o=node('option','#'+r.rank+' · '+modelName(i));o.value=String(i);o.selected=i===selected;sel.append(o);}if(!order.includes(selected))sel.selectedIndex=-1;};
-  input.addEventListener('input',fill);sel.addEventListener('change',()=>{selected=Number(sel.value);onSelect(selected);});fill();return wrap;
- }
+ /* picker: see ruler_prefs.js */
  function dirty(){save();renderRank();renderPreferenceResults();renderWeights();renderResultState();}
  function renderDomains(){const root=$('domains');clear(root);ALL.forEach((k,i)=>{const b=node('button',null,'domain-btn');b.type='button';b.setAttribute('aria-pressed',String(domain===k));b.append(node('strong',LABELS[k]),node('small',(k==='overall'?'六领域交集':Math.round(WEIGHTS[i-1]*100)+'%')+' · '+states[k].preferences.length+' 条'));b.onclick=()=>{domain=k;explainPair=[null,null];lastExplain=null;$('rank-domain').value=k;save();render();};root.append(b);});const weights=$('domain-weights');clear(weights);KEYS.forEach((k,i)=>weights.append(node('span',LABELS[k]+' '+Math.round(WEIGHTS[i]*100)+'%')));}
- function renderPrefs(){const s=states[domain],root=$('prefs');clear(root);if(!s.preferences.length)root.append(node('div','还没有比较。添加比较后运行；综合比较与领域比较可共同拟合。','notice'));
-  s.preferences.forEach((p,idx)=>{const card=node('div',null,'pref'),top=node('div',null,'pref-title'),remove=node('button','删除','button text');remove.type='button';remove.setAttribute('aria-label','删除比较 '+(idx+1));remove.onclick=()=>{s.preferences.splice(idx,1);save();render();};top.append(node('span','比较 '+(idx+1)),remove);card.append(top);
-   const grid=node('div',null,'pref-grid');grid.append(picker(domain,p.a,v=>{p.a=v;dirty();},'模型 A'),picker(domain,p.b,v=>{p.b=v;dirty();},'模型 B'));card.append(grid);
-   const opts=node('div',null,'options'),relation=node('div',null,'field'),rl=node('label','关系'),rs=node('select');rs.setAttribute('aria-label','比较 '+(idx+1)+' 的关系');[['stronger','A 强于 B'],['tie','A 与 B 相当']].forEach(([v,t])=>{const o=node('option',t);o.value=v;rs.append(o)});rs.value=p.relation;rs.onchange=()=>{p.relation=rs.value;if(p.relation==='tie')p.gap=null;save();renderPrefs();renderResultState();renderRank();};rl.append(rs);relation.append(rl);const conf=node('div',null,'field'),cl=node('label','置信度（0–1）'),ci=node('input');ci.type='number';ci.min='0';ci.max='1';ci.step='0.05';ci.value=p.confidence;cl.append(ci);conf.append(cl);ci.oninput=()=>{p.confidence=ci.value.trim()===''?null:Number(ci.value);dirty();};const gap=node('div',null,'field'),gl=node('label','目标差距（可选，指数点）'),gi=node('input');gi.type='number';gi.min='0';gi.max='100';gi.step='0.1';gi.placeholder=p.relation==='tie'?'相当：目标为 0':'留空仅约束方向';gi.value=p.gap??'';gi.disabled=p.relation==='tie';gl.append(gi);gap.append(gl);gi.oninput=()=>{p.gap=gi.value.trim()===''?null:Number(gi.value);dirty();};opts.append(relation,conf,gap);card.append(opts);root.append(card);
-  });const coupled=states.overall.preferences.length>0,optionState=coupled?states.overall:s,o=optionState.options;$('options-note').textContent=coupled?'综合联合拟合会同时使用全部领域的比较，统一使用综合拟合选项；单领域选项留待单领域拟合。':'当前选项用于'+LABELS[domain]+'拟合。';$('lambda').value=o.lambda;$('item-penalty').value=o.itemPenalty;$('iterations').value=o.maxIterations;$('learn-items').checked=o.learnItems;
+ /* Replaces picker() and renderPrefs() inside the original ruler script (see build.py).
+   Same preference fields as before: a, b, relation ('stronger' | 'tie'), confidence 0–1, gap (> 0) or null. */
+ function picker(k,selected,onSelect,label){
+  const wrap=node('div',null,'field mpick'),cap=node('span',label,'field-label'),btn=node('button',null,'mpick-btn'),pop=node('div',null,'mpick-pop'),input=node('input'),list=node('div',null,'mpick-list'),more=node('p',null,'mpick-more');
+  btn.type='button';btn.setAttribute('aria-haspopup','listbox');btn.setAttribute('aria-expanded','false');btn.setAttribute('aria-label',label+'：选择模型');
+  input.type='search';input.placeholder='搜索名称、别名或 ID';input.setAttribute('aria-label',label+'：搜索');list.setAttribute('role','listbox');pop.hidden=true;pop.append(input,list,more);
+  const valid=i=>Number.isInteger(i)&&baseMaps[k].has(i);
+  const face=()=>{clear(btn);if(valid(selected)){if(window.bbAvatar)btn.append(window.bbAvatar(selected,'sm'));btn.append(node('span',modelName(selected),'mpick-name'),node('span','#'+baseMaps[k].get(selected).rank,'mpick-rank'));}else btn.append(node('span','选择模型','mpick-placeholder'));btn.append(node('span','▾','mpick-caret'));};
+  let items=[],active=0;
+  const mark=()=>[...list.children].forEach((c,n)=>c.classList.toggle('active',n===active));
+  const fill=()=>{
+   const q=input.value.trim().toLocaleLowerCase(),all=modelOrder(k).filter(i=>!q||[modelName(i),models[i].name,models[i].id,...(Array.isArray(models[i].aliases)?models[i].aliases:[])].join(' ').toLocaleLowerCase().includes(q));
+   items=all.slice(0,60);active=Math.max(0,items.indexOf(selected));clear(list);
+   if(!items.length)list.append(node('div','没有匹配的模型','mpick-empty'));
+   items.forEach((i,n)=>{const o=node('div',null,'mpick-opt');o.setAttribute('role','option');o.setAttribute('aria-selected',String(i===selected));if(window.bbAvatar)o.append(window.bbAvatar(i,'sm'));o.append(node('span',modelName(i),'mpick-name'),node('span','#'+baseMaps[k].get(i).rank,'mpick-rank'));o.onmousedown=e=>{e.preventDefault();choose(i);};o.onmousemove=()=>{if(active!==n){active=n;mark();}};list.append(o);});
+   mark();more.textContent=all.length>items.length?'只列出前 '+items.length+' 个，共 '+all.length+' 个；输入名称可缩小范围。':'';
+  };
+  const outside=e=>{if(!wrap.contains(e.target))close();};
+  const open=()=>{pop.hidden=false;btn.setAttribute('aria-expanded','true');input.value='';fill();input.focus();list.querySelector('.active')?.scrollIntoView({block:'nearest'});document.addEventListener('mousedown',outside,true);};
+  const close=()=>{pop.hidden=true;btn.setAttribute('aria-expanded','false');document.removeEventListener('mousedown',outside,true);};
+  const choose=i=>{selected=i;close();face();onSelect(i);};
+  btn.onclick=()=>pop.hidden?open():close();
+  input.oninput=fill;
+  input.onkeydown=e=>{
+   if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();active=Math.max(0,Math.min(items.length-1,active+(e.key==='ArrowDown'?1:-1)));mark();list.children[active]?.scrollIntoView({block:'nearest'});}
+   else if(e.key==='Enter'){e.preventDefault();if(items[active]!==undefined)choose(items[active]);}
+   else if(e.key==='Escape'){close();btn.focus();}
+  };
+  face();wrap.append(cap,btn,pop);return wrap;
  }
+ const confidenceLabel=c=>!finite(c)?'未填写':c===0?'不参与拟合':c<.3?'几乎没把握':c<.6?'有点把握':c<.85?'比较确定':'非常确定';
+ function renderPrefs(){
+  const s=states[domain],root=$('prefs');clear(root);
+  if(!s.preferences.length)root.append(node('div','还没有判断。点「添加比较」，选两个模型，再说谁更强。','notice'));
+  s.preferences.forEach((p,idx)=>{
+   const card=node('div',null,'pref'),top=node('div',null,'pref-title'),remove=node('button','删除','button text');
+   remove.type='button';remove.setAttribute('aria-label','删除比较 '+(idx+1));remove.onclick=()=>{s.preferences.splice(idx,1);save();render();};
+   top.append(node('span','比较 '+(idx+1)),remove);card.append(top);
+   const pair=node('div',null,'pref-pair'),swap=node('button','⇅','pref-swap');
+   swap.type='button';swap.title='交换左右';swap.setAttribute('aria-label','交换两个模型');swap.onclick=()=>{[p.a,p.b]=[p.b,p.a];dirty();renderPrefs();};
+   pair.append(picker(domain,p.a,v=>{p.a=v;dirty();renderPrefs();},'模型 A'),swap,picker(domain,p.b,v=>{p.b=v;dirty();renderPrefs();},'模型 B'));
+   card.append(pair);
+   const has=i=>Number.isInteger(i)&&baseMaps[domain].has(i),ready=has(p.a)&&has(p.b)&&p.a!==p.b;
+   const nameA=has(p.a)?modelName(p.a):'模型 A',nameB=has(p.b)?modelName(p.b):'模型 B';
+   if(has(p.a)&&p.a===p.b)card.append(node('p','请选择两个不同的模型。','notice warn'));
+   const relation=node('div',null,'field'),seg=node('div',null,'pref-seg');seg.setAttribute('role','group');seg.setAttribute('aria-label','你的判断');
+   for(const [v,text] of [['a',nameA+' 更强'],['tie','差不多'],['b',nameB+' 更强']]){
+    const b=node('button',null,'pref-opt');b.type='button';b.append(node('span',text));
+    b.setAttribute('aria-pressed',String(v==='tie'?p.relation==='tie':v==='a'&&p.relation==='stronger'));
+    // "B is stronger" is stored as A/B swapped, so the stronger model is always A.
+    b.onclick=()=>{if(v==='b'){[p.a,p.b]=[p.b,p.a];p.relation='stronger';}else if(v==='a')p.relation='stronger';else{p.relation='tie';p.gap=null;}dirty();renderPrefs();};
+    seg.append(b);
+   }
+   relation.append(node('span','你的判断','field-label'),seg);card.append(relation);
+   const conf=node('div',null,'field'),head=node('div',null,'pref-range-head'),label=node('span','把握程度','field-label'),value=node('span',null,'pref-range-value'),range=node('input'),marks=node('div',null,'pref-range-marks');
+   range.type='range';range.min='0';range.max='1';range.step='0.05';range.value=finite(p.confidence)?p.confidence:1;range.setAttribute('aria-label','把握程度，0 到 1');
+   const show=()=>{value.textContent=fmt(p.confidence)+' · '+confidenceLabel(p.confidence);range.style.setProperty('--v',(100*(finite(p.confidence)?p.confidence:0))+'%');};
+   range.oninput=()=>{p.confidence=Number(range.value);show();dirty();};show();
+   ['0 不计入','有点把握','比较确定','1 非常确定'].forEach(t=>marks.append(node('span',t)));
+   head.append(label,value);conf.append(head,range,marks);card.append(conf);
+   if(p.relation==='tie'){
+    if(ready){const d=Math.abs(baseMaps[domain].get(p.a).score-baseMaps[domain].get(p.b).score);card.append(node('p','目标：两者分数接近。默认榜上目前相差 '+fmt(d,1)+' 分。','pref-hint'));}
+   }else{
+    const gap=node('div',null,'field pref-gap'),gl=node('label',null,'field-label'),row=node('div',null,'pref-gap-row'),gi=node('input');
+    gl.textContent='希望拉开多少分（可选）';gi.type='number';gi.min='0.5';gi.max='100';gi.step='0.5';gi.value=p.gap??'';gi.placeholder='留空';gi.setAttribute('aria-label','希望 '+nameA+' 比 '+nameB+' 高出的指数分');
+    gi.oninput=()=>{p.gap=gi.value.trim()===''?null:Number(gi.value);dirty();};
+    row.append(gi,node('span','分（0–100 指数）。留空表示只要求 '+nameA+' 排在 '+nameB+' 前面。','pref-gap-unit'));
+    gap.append(gl,row);
+    if(ready){
+     const ra=baseMaps[domain].get(p.a),rb=baseMaps[domain].get(p.b),d=ra.score-rb.score;
+     gap.append(node('p','默认榜上：'+nameA+' '+fmt(ra.score,1)+'，'+nameB+' '+fmt(rb.score,1)+(d>=0?'，已经高出 ':'，目前低 ')+fmt(Math.abs(d),1)+' 分。','pref-hint'));
+    }
+    card.append(gap);
+   }
+   root.append(card);
+  });
+  const coupled=states.overall.preferences.length>0,optionState=coupled?states.overall:s,o=optionState.options;$('options-note').textContent=coupled?'综合联合拟合会同时使用全部领域的比较，统一使用综合拟合选项；单领域选项留待单领域拟合。':'当前选项用于'+LABELS[domain]+'拟合。';$('lambda').value=o.lambda;$('item-penalty').value=o.itemPenalty;$('iterations').value=o.maxIterations;$('learn-items').checked=o.learnItems;
+ 
+ }
+
  function validate(k,checkOptions=true){const s=states[k];if(checkOptions&&!optionsValid(s.options))return '请检查拟合选项：λ 必须大于 0，单元正则化至少为 1，迭代次数为 1–500 的整数。';const seen=new Set();for(let i=0;i<s.preferences.length;i++){const p=s.preferences[i],n='第 '+(i+1)+' 条比较：';if(!Number.isInteger(p.a)||!Number.isInteger(p.b)||!baseMaps[k].has(p.a)||!baseMaps[k].has(p.b))return n+'请选择两个在该领域已有基线排名的模型。';if(p.a===p.b)return n+'请选择不同的模型。';if(!finite(p.confidence)||p.confidence<0||p.confidence>1)return n+'置信度应为 0–1。';if(p.gap!==null&&(!finite(p.gap)||p.gap<=0||p.gap>100))return n+'目标差距须大于 0 且不超过 100，或留空。';const key=[p.a,p.b,p.relation,p.gap,p.confidence].join('/');if(seen.has(key))return n+'存在完全重复的比较，请调整置信度或删除重复项。';seen.add(key);}return null;}
  function displayRows(k,personal){return personal&&states[k].result?states[k].result.rows:D.domains[k].rows;}
  function overall(personal){if(!personal)return overallBaseline;if(states.overall.result)return states.overall.result.rows;const maps=KEYS.map(k=>new Map(displayRows(k,personal).map(r=>[Number(r.index),r]))),out=[];for(let i=0;i<models.length;i++){const rows=maps.map(m=>m.get(i));if(rows.some(r=>!r||!finite(r.z)))continue;const z=rows.reduce((sum,r,j)=>sum+WEIGHTS[j]*r.z,0);out.push({index:i,id:models[i].id,name:modelName(i),score:100/(1+Math.exp(-(.9*z-1.8))),z});}out.sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name,'zh-CN'));out.forEach((r,i)=>r.rank=i+1);return out;}
  function renderRank(){const k=$('rank-domain').value||'overall',before=k==='overall'?overall(false):D.domains[k].rows,after=k==='overall'?overall(true):displayRows(k,true),old=new Map(before.map(r=>[Number(r.index),r])),updated=new Map(after.map(r=>[Number(r.index),r]));let rows=Array.from(new Set([...old.keys(),...updated.keys()])).map(i=>({i,old:old.get(i),cur:updated.get(i)}));const judged=new Set();for(const d of (k==='overall'?ALL:states.overall.result?[k,'overall']:[k]))for(const p of states[d].result?.preferences||[])if(p.confidence>0){judged.add(p.a);judged.add(p.b);}if($('unjudged-only').checked)rows=rows.filter(r=>!judged.has(r.i));const q=$('rank-query').value.trim().toLocaleLowerCase();rows=rows.filter(r=>[modelName(r.i),models[r.i]?.id,...(Array.isArray(models[r.i]?.aliases)?models[r.i].aliases:[])].join(' ').toLocaleLowerCase().includes(q));const sort=$('rank-sort').value;rows.sort((a,b)=>{if(sort==='name')return modelName(a.i).localeCompare(modelName(b.i),'zh-CN');if(sort==='change')return ((b.old?.rank??0)-(b.cur?.rank??0))-((a.old?.rank??0)-(a.cur?.rank??0));return ((sort==='old'?a.old?.rank:a.cur?.rank)??Infinity)-((sort==='old'?b.old?.rank:b.cur?.rank)??Infinity);});
-  const body=$('rank-body');clear(body);const frag=document.createDocumentFragment();for(const r of rows){const tr=node('tr'),delta=finite(r.old?.rank)&&finite(r.cur?.rank)?r.old.rank-r.cur.rank:null,diff=finite(r.old?.score)&&finite(r.cur?.score)?r.cur.score-r.old.score:null;const modelCell=node('td',modelName(r.i),'model');const coverage=k==='overall'?KEYS.map(d=>[LABELS[d],baseMaps[d].get(r.i)?.benchmarks]).filter(x=>finite(x[1])):[[LABELS[k],r.old?.benchmarks]].filter(x=>finite(x[1]));if(coverage.length){const label=coverage.map(([name,n])=>name+' '+n+' 个 benchmark 系列'+(n===1?'（仅1个benchmark系列）':'')).join(' · ');modelCell.append(node('div',label,'subtle'));}tr.append(modelCell,node('td',finite(r.old?.rank)?'#'+r.old.rank:'—'),node('td',finite(r.cur?.rank)?'#'+r.cur.rank:'—'),node('td',delta===null?'—':delta>0?'↑ '+delta:delta<0?'↓ '+Math.abs(delta):'—',delta>0?'up':delta<0?'down':''),node('td',fmt(r.old?.score)),node('td',fmt(r.cur?.score)),node('td',signed(diff),diff>0?'up':diff<0?'down':''));frag.append(tr);}body.append(frag);$('rank-empty').hidden=rows.length>0;
+  const body=$('rank-body');clear(body);const frag=document.createDocumentFragment();for(const r of rows){const tr=node('tr'),delta=finite(r.old?.rank)&&finite(r.cur?.rank)?r.old.rank-r.cur.rank:null,diff=finite(r.old?.score)&&finite(r.cur?.score)?r.cur.score-r.old.score:null;const modelCell=node('td',modelName(r.i),'model');const coverage=k==='overall'?KEYS.map(d=>[LABELS[d],baseMaps[d].get(r.i)?.benchmarks]).filter(x=>finite(x[1])):[[LABELS[k],r.old?.benchmarks]].filter(x=>finite(x[1]));if(coverage.length){const label='评测族 '+coverage.map(([name,n])=>name+' '+n+(n===1?'（单族）':'')).join(' · ');modelCell.append(node('div',label,'subtle'));}tr.append(modelCell,node('td',finite(r.old?.rank)?'#'+r.old.rank:'—'),node('td',finite(r.cur?.rank)?'#'+r.cur.rank:'—'),node('td',delta===null?'—':delta>0?'↑ '+delta:delta<0?'↓ '+Math.abs(delta):'—',delta>0?'up':delta<0?'down':''),node('td',fmt(r.old?.score)),node('td',fmt(r.cur?.score)),node('td',signed(diff),diff>0?'up':diff<0?'down':''));frag.append(tr);}body.append(frag);$('rank-empty').hidden=rows.length>0;
   const involved=k==='overall'?KEYS:[k],applied=involved.filter(x=>states[x].result),stale=applied.some(x=>isStale(states[x])),needs=involved.some(x=>states[x].needsRefit)||(k==='overall'&&states.overall.needsRefit);$('rank-state').textContent=needs?'结果待重新拟合':stale?'规则已编辑 · 结果待更新':applied.length?'已应用个人尺子':involved.some(x=>states[x].preferences.length)?'基线 · 偏好待运行':'基线';$('rank-info').textContent=(k==='overall'?'综合榜仅包含六个领域均有基线结果的模型，不填补缺失领域；按 25 / 20 / 20 / 15 / 10 / 10 加权领域 z 值。':LABELS[k]+'领域 · v6.94 基线与已应用结果。')+' 共 '+rows.length+' 个模型。'+($('unjudged-only').checked?' 已排除参与已应用校准的模型（置信度为 0 不参与）。':'')+(stale?' 编辑尚未应用，表中仍是上次结果。':'')+(needs?' 相关结果已失效或尚未拟合，保留的偏好需要重新拟合。':'');
  }
  function renderResultState(){const s=states[domain];if(!busy&&s.needsRefit){$('run-progress').textContent='先前的联合结果已失效；保留的偏好需要重新拟合。';return;}if(!busy&&(isStale(s)||(!s.result&&s.preferences.length)))$('run-progress').textContent=s.result?'偏好或选项已编辑；榜单仍显示上次应用的结果。':'偏好尚未运行；当前显示基线。';else if(!busy)$('run-progress').textContent='';}
