@@ -197,6 +197,14 @@ td.missing{color:var(--faint);text-align:right;font-size:12px}
 .scatter .ax-title{font:12px var(--sans);fill:var(--muted)}
 .scatter .pt-lab{font:11px var(--sans);fill:var(--ink-2);pointer-events:none}
 .axis-pick .select select{max-width:96px}
+.axis-pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#cost-card{margin-bottom:24px}
+.scatter .frontier{fill:none;stroke:var(--ink);stroke-width:1.4;stroke-opacity:.55}
+.scatter .ci{stroke-opacity:.35;stroke-width:1}
+.cost-note{margin:10px 0 0;font-size:12px;color:var(--muted)}
+.cost-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:20px}
+.cost-stats .callout b{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+.cost-stats .callout.na{color:var(--faint)}
 
 /* changelog */
 .changelog{list-style:none;margin:0;padding:0 0 0 14px;border-left:1px solid var(--line);display:grid;gap:18px}
@@ -611,6 +619,15 @@ dialog::backdrop{background:rgba(17,17,16,.32)}
    <p id="empty-board" class="empty" hidden></p>
    <div id="other-matches"></div>
    <div class="pager"><span id="page-label"></span><div><button id="prev" class="btn ghost sm" type="button" aria-label="上一页">←</button><button id="next" class="btn ghost sm" type="button" aria-label="下一页">→</button></div></div>
+  </section>
+
+  <section class="card" id="cost-card" aria-labelledby="cost-title" hidden>
+   <div class="card-top">
+    <div><h2 id="cost-title" class="serif-title">能力与花费</h2><p id="cost-desc" class="card-desc"></p></div>
+    <div class="card-tools axis-pick"><div class="seg" id="cost-seg" role="group" aria-label="横轴指标"><button type="button" data-m="cost" aria-pressed="true">花费</button><button type="button" data-m="time" aria-pressed="false">耗时</button><button type="button" data-m="tokens" aria-pressed="false">输出量</button></div><label class="select"><span>纵轴</span><select id="cy"></select></label></div>
+   </div>
+   <div id="cost-plot" class="scatter"></div>
+   <p class="note cost-note">横轴为相对倍数（对数刻度），1× 为有两张以上来源表的模型中位数。各家的美元与秒数口径不同，只用同一张表内的比值拟合；每个模型取排名所用的最高推理力度。实线连起的是性价比前沿：没有别的模型更省且更强。</p>
   </section>
 
   <div class="duo">
@@ -1145,6 +1162,99 @@ window.startBBExplorer = function (S, data) {
     root.replaceChildren(svg);
   }
 
+  /* capability vs cost: relative factors fitted from within-table ratios (tools/data_refresh/cost.py) */
+  const C = S.cost, CM = {cost: '花费', time: '耗时', tokens: '输出量'};
+  const costOf = {};
+  if (C) for (const [k, m] of Object.entries(C.metrics)) costOf[k] = new Map(m.rows.map(([i, x, se, t, s]) => [i, {x, se, tables: t, sources: s}]));
+  let costMetric = 'cost';
+  const cy = $('cy');
+  for (const b of BOARDS) cy.append(new Option(LABELS[b], b));
+  cy.value = 'overall';
+  cy.onchange = drawCost;
+  document.querySelectorAll('#cost-seg button').forEach(b => {
+    b.onclick = () => { costMetric = b.dataset.m; document.querySelectorAll('#cost-seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); drawCost(); };
+  });
+  const fx = x => (x >= 10 ? Math.round(x) : x >= 1 ? x.toFixed(1) : x >= .1 ? x.toFixed(2) : x.toPrecision(1)) + '×';
+  function drawCost() {
+    const card = $('cost-card');
+    card.hidden = !C;
+    const root = $('cost-plot'), w = root.clientWidth;
+    if (!C || !w) return;
+    const Y = view(cy.value).map, X = costOf[costMetric];
+    const pts = [...Y.keys()].filter(i => X.get(i)?.tables >= 2).map(i => ({i, x: X.get(i).x, y: Y.get(i).score, c: X.get(i), r: Y.get(i).drank}));
+    $('cost-desc').textContent = LABELS[cy.value] + '指数 × 相对' + CM[costMetric] + ' · ' + pts.length + ' 个模型（至少两张来源表）· 共 ' + C.metrics[costMetric].tables + ' 张来源表';
+    if (pts.length < 3) { root.replaceChildren(el('p', '这一榜单与该指标重叠的模型太少。', 'note')); return; }
+    const h = Math.round(Math.min(Math.max(w * .5, 280), 420)), L = 34, R = 12, T = 10, B = 34, steps = w < 500 ? [1] : [1, 3];
+    const lx = pts.map(p => Math.log10(p.x)), lo = Math.floor(Math.min(...lx) * 2) / 2, hi = Math.ceil(Math.max(...lx) * 2) / 2;
+    const ys = pts.map(p => p.y), y0 = Math.max(0, Math.floor(Math.min(...ys) / 10) * 10), y1 = Math.min(100, Math.ceil(Math.max(...ys) / 10) * 10);
+    const px = v => L + (w - L - R) * (Math.log10(v) - lo) / (hi - lo), py = v => T + (h - T - B) * (1 - (v - y0) / (y1 - y0 || 1));
+    const svg = svgEl('svg', {viewBox: `0 0 ${w} ${h}`, role: 'img', 'aria-label': LABELS[cy.value] + '指数与相对' + CM[costMetric] + '散点图'});
+    for (let e = Math.ceil(lo); e <= Math.floor(hi); e++) for (const m of steps) {
+      const v = m * 10 ** e; if (Math.log10(v) > hi) continue;
+      svg.append(svgEl('line', {x1: px(v), x2: px(v), y1: T, y2: h - B, stroke: m === 1 ? '#e6e3dc' : '#f3f1ec'}));
+      svg.append(svgEl('text', {x: px(v), y: h - B + 14, 'text-anchor': 'middle', class: 'ax'}, fx(v)));
+    }
+    for (let v = y0; v <= y1; v += (y1 - y0) / 4) {
+      svg.append(svgEl('line', {x1: L, x2: w - R, y1: py(v), y2: py(v), stroke: '#efede7'}));
+      svg.append(svgEl('text', {x: L - 6, y: py(v) + 3, 'text-anchor': 'end', class: 'ax'}, Math.round(v)));
+    }
+    svg.append(svgEl('text', {x: w - R, y: h - 4, 'text-anchor': 'end', class: 'ax-title'}, '相对' + CM[costMetric] + ' →'));
+    svg.append(svgEl('text', {x: L + 4, y: T + 12, class: 'ax-title'}, '↑ ' + LABELS[cy.value]));
+    // efficiency frontier: walking from cheapest up, keep each model that beats every cheaper one
+    const front = [];
+    for (const p of [...pts].sort((a, b) => a.x - b.x || b.y - a.y)) if (!front.length || p.y > front[front.length - 1].y) front.push(p);
+    svg.append(svgEl('polyline', {points: front.map(p => px(p.x) + ',' + py(p.y)).join(' '), class: 'frontier'}));
+    pts.sort((a, b) => (vendors[b.i] === OTHER_IDX) - (vendors[a.i] === OTHER_IDX) || a.y - b.y);
+    for (const p of pts) {
+      const on = selected.includes(p.i);
+      if (on) { const k = Math.exp(p.c.se); svg.append(svgEl('line', {x1: px(p.x / k), x2: px(p.x * k), y1: py(p.y), y2: py(p.y), stroke: vendorColor(vendors[p.i]), class: 'ci'})); }
+      const c = svgEl('circle', {cx: px(p.x), cy: py(p.y), r: on ? 6 : 4, fill: vendorColor(vendors[p.i]), 'fill-opacity': vendors[p.i] === OTHER_IDX ? .45 : .85, class: 'dot'});
+      c.onmousemove = e => showTip(e, tipLines(p.i, [LABELS[cy.value] + ' ' + f1(p.y) + ' · #' + p.r,
+        '相对' + CM[costMetric] + ' ' + fx(p.x) + '（约 ' + fx(p.x / Math.exp(p.c.se)) + '–' + fx(p.x * Math.exp(p.c.se)) + '）',
+        p.c.tables + ' 张表 · ' + p.c.sources + ' 个来源']));
+      c.onmouseleave = hideTip; c.onclick = () => { hideTip(); profile(p.i); };
+      svg.append(c);
+    }
+    const wanted = [...front.slice().reverse(), ...pts.filter(p => selected.includes(p.i))];
+    const boxes = [], limit = w < 500 ? 4 : 9;
+    for (const p of wanted) {
+      if (boxes.length >= limit || boxes.some(b => b.p === p)) continue;
+      const right = px(p.x) < w - 150, width = names[p.i].length * 6.5 + 8;
+      const x0 = right ? px(p.x) + 7 : px(p.x) - 7 - width, y0 = py(p.y) - 7;
+      if (boxes.some(b => x0 < b.x0 + b.w && b.x0 < x0 + width && Math.abs(b.y0 - y0) < 13)) continue;
+      boxes.push({p, x0, y0, w: width});
+      svg.append(svgEl('text', {x: px(p.x) + (right ? 7 : -7), y: py(p.y) + 4, 'text-anchor': right ? 'start' : 'end', class: 'pt-lab'}, names[p.i]));
+    }
+    root.replaceChildren(svg);
+  }
+  function costPanel(i) {
+    if (!C) return null;
+    const wrap = el('div'), stats = el('div', null, 'cost-stats');
+    for (const [k, label] of Object.entries(CM)) {
+      const v = costOf[k].get(i), c = el('div', null, 'callout' + (v ? '' : ' na'));
+      c.append(el('small', '相对' + label));
+      if (v) { c.append(el('b', fx(v.x))); c.append(el('small', v.tables + ' 张表 · ' + v.sources + ' 个来源' + (v.tables < 2 ? ' · 仅供参考' : ''))); }
+      else c.append(el('b', '—'), el('small', '无公开数据'));
+      stats.append(c);
+    }
+    wrap.append(stats);
+    const rows = C.obs.filter(o => o[0] === i);
+    if (rows.length) {
+      const fold = el('details', null, 'fold'), ul = el('ul', null, 'src-list'), metrics = Object.keys(C.metrics);
+      fold.append(el('summary', '花费与速度来源 · ' + rows.length + ' 条'), ul);
+      const unit = {cost: v => '$' + (v >= 100 ? Math.round(v) : v >= 1 ? v.toFixed(2) : v.toPrecision(2)), time: v => v >= 3600 ? (v / 3600).toFixed(1) + ' 小时' : v >= 60 ? (v / 60).toFixed(1) + ' 分' : v.toFixed(1) + ' 秒', tokens: v => v >= 1e3 ? (v / 1e3).toFixed(v >= 1e5 ? 0 : 1) + 'k' : Math.round(v) + ''};
+      rows.sort((a, b) => a[1] - b[1] || C.tables[a[2]][0].localeCompare(C.tables[b[2]][0]));
+      for (const [, mk, tk, value, ek, resid] of rows) {
+        const [table, family, url] = C.tables[tk], m = metrics[mk], li = el('li'), left = el('span', null, 'nm');
+        left.append(link(table, url), el('span', CM[m] + ' · ' + family + (C.efforts[ek] ? ' · ' + C.efforts[ek] : ''), 'blk'));
+        li.append(left, el('span', unit[m](value) + (Math.abs(resid) > 3 * C.metrics[m].sigma ? ' · 离群' : ''), 'meta'));
+        ul.append(li);
+      }
+      wrap.append(fold);
+    }
+    return wrap;
+  }
+
   /* changelog */
   function drawLog() {
     const root = $('changelog'), ov = view('overall').map, index = n => models.findIndex(m => m.name === n);
@@ -1195,7 +1305,7 @@ window.startBBExplorer = function (S, data) {
   function toggle(i) {
     const k = selected.indexOf(i);
     if (k >= 0) selected.splice(k, 1); else if (selected.length < 4) selected.push(i);
-    renderBoard(); renderTray(); drawScatter();
+    renderBoard(); renderTray(); drawScatter(); drawCost();
     if ($('compare').open) compare();
   }
   function chip(i, onRemove) {
@@ -1208,7 +1318,7 @@ window.startBBExplorer = function (S, data) {
     $('tray-open').textContent = '对比 ' + selected.length;
   }
   $('tray-open').onclick = () => compare();
-  $('tray-clear').onclick = () => { selected.length = 0; renderBoard(); renderTray(); drawScatter(); };
+  $('tray-clear').onclick = () => { selected.length = 0; renderBoard(); renderTray(); drawScatter(); drawCost(); };
 
   /* dialogs */
   for (const d of [$('drawer'), $('compare')]) {
@@ -1265,6 +1375,8 @@ window.startBBExplorer = function (S, data) {
       if (thin.length) c.append(el('div', thin.map(d => LABELS[d]).join('、') + '只有一个评测族的实测，分榜不显示这一项。', 'callout warn'));
       body.append(c);
     }
+    const cp = costPanel(i);
+    if (cp) body.append(cp);
     const act = el('div', null, 'row-actions'), on = selected.includes(i);
     const add = btn(on ? '移出对比' : '加入对比', () => { toggle(i); profile(i); }, 'btn' + (on ? '' : ' primary'));
     add.disabled = !on && selected.length >= 4;
@@ -1576,7 +1688,7 @@ window.startBBExplorer = function (S, data) {
     if (next === 'benchmarks') { if (!bench) buildBench(); renderBench(); }
     if (next === 'vertical') { if (!vert) { buildVertical(); renderVerticalCats(); } renderVerticalBoard(); }
     if (next === 'personal') loadPersonal();
-    if (next === 'home') requestAnimationFrame(() => { drawBars(); drawScatter(); });
+    if (next === 'home') requestAnimationFrame(() => { drawBars(); drawScatter(); drawCost(); });
     if (target && target.closest('.view')) target.scrollIntoView(); else if (changed) window.scrollTo(0, 0);
   }
   route.view = null;
@@ -1586,10 +1698,10 @@ window.startBBExplorer = function (S, data) {
     $('board-tabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.board === board)));
     $('chart-desc').textContent = board === 'overall' ? DOMAINS.map(d => LABELS[d] + ' ' + Math.round(WEIGHT[d] * 100) + '%').join(' · ')
       : FULL[board] + ' · ' + fmt(view(board).rows.length) + ' 个模型（评测族 ≥ ' + cov.domain + '）';
-    drawBars(); drawLeaders(); renderBoard(); drawScatter(); drawLog();
+    drawBars(); drawLeaders(); renderBoard(); drawScatter(); drawCost(); drawLog();
   }
   let resizeTimer = 0;
-  new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (route.view === 'home') { drawBars(); drawScatter(); } }, 80); }).observe(document.body);
+  new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (route.view === 'home') { drawBars(); drawScatter(); drawCost(); } }, 80); }).observe(document.body);
   $('coverage-filter').value = String(cov.overall);
   syncPersonal();
   renderAll(); route();
@@ -1836,7 +1948,7 @@ window.startPersonalUI=start;
    Cache Storage is unavailable (private windows, file://). */
 (function () {
   'use strict';
-  const FILES = {"summary": "data/summary.1bb3eb4cde5b.json.gz", "obs": "data/obs.d0478585f3a8.json.gz", "payload": "data/payload.10385dba725a.json.gz", "arrays": "data/arrays.653467e1795b.bin.gz"}, CACHE = 'bb-index-data';
+  const FILES = {"summary": "data/summary.a7ae69178995.json.gz", "obs": "data/obs.d0478585f3a8.json.gz", "payload": "data/payload.10385dba725a.json.gz", "arrays": "data/arrays.653467e1795b.bin.gz"}, CACHE = 'bb-index-data';
   const absolute = u => new URL(u, location.href).href;
   async function open() { try { return await caches.open(CACHE); } catch (_) { return null; } }
   async function get(url, onProgress) {
@@ -1894,4 +2006,8 @@ window.startPersonalUI=start;
   });
 })();
 </script>
+<script>/* Cloudflare Web Analytics: cookie-free page counts, live domain only */
+if (/(^|\.)bb-index\.com$/.test(location.hostname)) { var s = document.createElement('script'); s.defer = true;
+  s.src = 'https://static.cloudflareinsights.com/beacon.min.js'; s.setAttribute('data-cf-beacon', '{"token": "1fd6d87ae88648189181752139689206"}');
+  document.body.appendChild(s); }</script>
 </body></html>
